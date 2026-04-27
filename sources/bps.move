@@ -45,7 +45,7 @@ public fun max(): BPS { BPS(DENOMINATOR) }
 
 public fun value(b: BPS): u16 { b.0 }
 
-public fun denominator(): u16 { DENOMINATOR }
+public macro fun denominator(): u16 { 10_000 }
 
 public fun is_zero(b: BPS): bool { b.0 == 0 }
 

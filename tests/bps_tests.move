@@ -22,7 +22,7 @@ fun zero_and_max() {
     assert!(bps::zero().value() == 0);
     assert!(bps::max().is_max());
     assert!(bps::max().value() == 10_000);
-    assert!(bps::denominator() == 10_000);
+    assert!(bps::denominator!() == 10_000);
 }
 
 #[test]
