@@ -53,7 +53,11 @@ public fun is_max(b: BPS): bool { b.0 == DENOMINATOR }
 
 // === Value composition ===
 
-public fun add(a: BPS, b: BPS): BPS { new(a.0 + b.0) }
+public fun add(a: BPS, b: BPS): BPS {
+    let v = a.0 + b.0;
+    assert!(v <= DENOMINATOR, EOverflow);
+    BPS(v)
+}
 
 public fun sub(a: BPS, b: BPS): BPS {
     assert!(a.0 >= b.0, EUnderflow);

@@ -17,6 +17,11 @@ fun new_and_accessors() {
 }
 
 #[test]
+fun new_at_exact_boundary() {
+    assert!(bps::new(10_000).is_max());
+}
+
+#[test]
 fun zero_and_max() {
     assert!(bps::zero().is_zero());
     assert!(bps::zero().value() == 0);
@@ -140,11 +145,22 @@ fun apply_and_complement_partition_amount() {
     assert!(t + r == x);
 }
 
+#[test]
+fun add_at_exact_boundary() {
+    assert!(bps::new(7_000).add(bps::new(3_000)).is_max());
+}
+
 #[test, expected_failure(abort_code = EOverflow)]
 fun add_overflow_aborts() {
     let a = bps::new(7_000);
     let b = bps::new(4_000);
     a.add(b);
+}
+
+#[test]
+fun sub_to_exactly_zero() {
+    let a = bps::new(1_000);
+    assert!(a.sub(a).is_zero());
 }
 
 #[test, expected_failure(abort_code = EUnderflow)]
@@ -178,6 +194,74 @@ fun split_u128_invariant() {
 fun apply_u256_basic() {
     let b = bps::from_percent(10);
     assert!(b.apply_u256(1_000u256) == 100u256);
+}
+
+#[test]
+fun apply_u256_at_documented_safe_limit() {
+    // The module docs promise no abort up to u256::MAX / 10_000.
+    let amount = std::u256::max_value!() / 10_000;
+    assert!(bps::max().apply_u256(amount) == amount);
+}
+
+#[test, expected_failure(arithmetic_error, location = bps)]
+fun apply_u256_above_safe_limit_aborts() {
+    bps::max().apply_u256(std::u256::max_value!() / 10_000 + 1);
+}
+
+// === Ceil coverage across widths ===
+
+#[test]
+fun apply_ceil_u16_rounds_up_and_exact() {
+    // 100 * 33 / 10_000 = 0.33 → ceil 1
+    assert!(bps::new(33).apply_ceil_u16(100u16) == 1u16);
+    // exact division → ceil == floor
+    assert!(bps::new(500).apply_ceil_u16(10_000u16) == 500u16);
+}
+
+#[test]
+fun apply_ceil_u32_rounds_up_and_exact() {
+    assert!(bps::new(33).apply_ceil_u32(100u32) == 1u32);
+    assert!(bps::new(500).apply_ceil_u32(10_000u32) == 500u32);
+}
+
+#[test]
+fun apply_ceil_u128_rounds_up_and_exact() {
+    assert!(bps::new(33).apply_ceil_u128(100u128) == 1u128);
+    assert!(bps::new(500).apply_ceil_u128(10_000u128) == 500u128);
+}
+
+#[test]
+fun apply_ceil_u256_remainder_branch() {
+    // 100 * 33 = 3_300; 3_300 % 10_000 != 0 → q + 1
+    assert!(bps::new(33).apply_ceil_u256(100u256) == 1u256);
+}
+
+#[test]
+fun apply_ceil_u256_exact_branch() {
+    // 10_000 * 500 = 5_000_000; % 10_000 == 0 → q
+    assert!(bps::new(500).apply_ceil_u256(10_000u256) == 500u256);
+}
+
+#[test]
+fun apply_ceil_at_max_never_exceeds_amount() {
+    assert!(bps::max().apply_ceil(U64_MAX) == U64_MAX);
+    assert!(bps::max().apply_ceil_u128(U128_MAX) == U128_MAX);
+}
+
+// === Remaining split widths ===
+
+#[test]
+fun split_u32_invariant() {
+    let b = bps::new(3_333);
+    let (t, r) = b.split_u32(4_294_967_295u32);
+    assert!(t + r == 4_294_967_295u32);
+}
+
+#[test]
+fun split_u256_invariant() {
+    let b = bps::new(3_333);
+    let (t, r) = b.split_u256(1_000_000_007u256);
+    assert!(t + r == 1_000_000_007u256);
 }
 
 // === u8 / u16 / u32 (supply-style amounts) ===
@@ -232,6 +316,12 @@ fun apply_u8_ceil_rounds_up() {
     let b = bps::new(1);
     assert!(b.apply_u8(10u8) == 0u8);
     assert!(b.apply_ceil_u8(10u8) == 1u8);
+}
+
+#[test]
+fun apply_ceil_u8_exact_division() {
+    // 200 * 5_000 / 10_000 = 100 exactly → ceil == floor
+    assert!(bps::new(5_000).apply_ceil_u8(200u8) == 100u8);
 }
 
 #[test]
