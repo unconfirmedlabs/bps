@@ -2,6 +2,7 @@
 module bps::bps_tests;
 
 use bps::bps::{Self, EOverflow, EUnderflow};
+use std::unit_test::assert_eq;
 
 const U64_MAX: u64 = 18_446_744_073_709_551_615;
 const U128_MAX: u128 = 340_282_366_920_938_463_463_374_607_431_768_211_455;
@@ -197,15 +198,68 @@ fun apply_u256_basic() {
 }
 
 #[test]
-fun apply_u256_at_documented_safe_limit() {
-    // The module docs promise no abort up to u256::MAX / 10_000.
-    let amount = std::u256::max_value!() / 10_000;
-    assert!(bps::max().apply_u256(amount) == amount);
+fun apply_u256_is_total_at_maximum() {
+    let amount = std::u256::max_value!();
+    let one_bps_floor = amount / 10_000;
+
+    assert_eq!(bps::zero().apply_u256(amount), 0);
+    assert_eq!(bps::new(1).apply_u256(amount), one_bps_floor);
+    assert_eq!(bps::new(9_999).apply_u256(amount), amount - one_bps_floor - 1);
+    assert_eq!(bps::max().apply_u256(amount), amount);
 }
 
-#[test, expected_failure(arithmetic_error, location = bps)]
-fun apply_u256_above_safe_limit_aborts() {
-    bps::max().apply_u256(std::u256::max_value!() / 10_000 + 1);
+#[test]
+fun apply_ceil_u256_is_total_at_maximum() {
+    let amount = std::u256::max_value!();
+    let one_bps_floor = amount / 10_000;
+
+    assert_eq!(bps::zero().apply_ceil_u256(amount), 0);
+    assert_eq!(bps::new(1).apply_ceil_u256(amount), one_bps_floor + 1);
+    assert_eq!(bps::new(9_999).apply_ceil_u256(amount), amount - one_bps_floor);
+    assert_eq!(bps::max().apply_ceil_u256(amount), amount);
+}
+
+#[test]
+fun u256_half_rate_handles_high_domain_parity() {
+    let maximum = std::u256::max_value!();
+    let largest_even = maximum - 1;
+    let half = bps::new(5_000);
+
+    assert_eq!(half.apply_u256(maximum), maximum / 2);
+    assert_eq!(half.apply_ceil_u256(maximum), maximum / 2 + 1);
+    assert_eq!(half.apply_u256(largest_even), largest_even / 2);
+    assert_eq!(half.apply_ceil_u256(largest_even), largest_even / 2);
+}
+
+#[random_test]
+fun u256_matches_direct_product_when_multiplication_is_safe(random_rate: u16, random_amount: u256) {
+    let denominator = 10_000u256;
+    let raw_rate = random_rate % 10_001;
+    let amount = random_amount / denominator;
+    let numerator = amount * (raw_rate as u256);
+    let expected_floor = numerator / denominator;
+    let expected_ceil = expected_floor + if (numerator % denominator == 0) 0 else 1;
+    let rate = bps::new(raw_rate);
+
+    assert_eq!(rate.apply_u256(amount), expected_floor);
+    assert_eq!(rate.apply_ceil_u256(amount), expected_ceil);
+}
+
+#[random_test]
+fun u256_full_domain_rounding_and_partition_invariants(random_rate: u16, amount: u256) {
+    let rate = bps::new(random_rate % 10_001);
+    let complement = rate.complement();
+    let floor = rate.apply_u256(amount);
+    let ceil = rate.apply_ceil_u256(amount);
+    let (taken, remainder) = rate.split_u256(amount);
+
+    assert!(floor <= ceil);
+    assert!(ceil <= amount);
+    assert!(ceil - floor <= 1);
+    assert_eq!(floor + complement.apply_ceil_u256(amount), amount);
+    assert_eq!(ceil + complement.apply_u256(amount), amount);
+    assert_eq!(taken, floor);
+    assert_eq!(taken + remainder, amount);
 }
 
 // === Ceil coverage across widths ===
@@ -246,6 +300,7 @@ fun apply_ceil_u256_exact_branch() {
 fun apply_ceil_at_max_never_exceeds_amount() {
     assert!(bps::max().apply_ceil(U64_MAX) == U64_MAX);
     assert!(bps::max().apply_ceil_u128(U128_MAX) == U128_MAX);
+    assert_eq!(bps::max().apply_ceil_u256(std::u256::max_value!()), std::u256::max_value!());
 }
 
 // === Remaining split widths ===
@@ -262,6 +317,13 @@ fun split_u256_invariant() {
     let b = bps::new(3_333);
     let (t, r) = b.split_u256(1_000_000_007u256);
     assert!(t + r == 1_000_000_007u256);
+}
+
+#[test]
+fun split_u256_conserves_maximum() {
+    let amount = std::u256::max_value!();
+    let (taken, remainder) = bps::new(3_333).split_u256(amount);
+    assert_eq!(taken + remainder, amount);
 }
 
 // === u8 / u16 / u32 (supply-style amounts) ===

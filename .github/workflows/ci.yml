@@ -1,0 +1,71 @@
+name: Move CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: move-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SUIUP_VERSION: 0.0.14
+  SUIUP_ARCHIVE_SHA256: c0b9fea95d52c4c5855478c3ee56e58e446614f32300dbd41fcc637a2e09878a
+  SUI_VERSION: 1.76.1
+
+jobs:
+  verify:
+    name: Verify Move package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install pinned Sui CLI
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SUIUP_DEFAULT_BIN_DIR: ${{ runner.temp }}/bin
+        run: |
+          mkdir -p "${SUIUP_DEFAULT_BIN_DIR}"
+          curl --fail --location --silent --show-error \
+            "https://github.com/MystenLabs/suiup/releases/download/v${SUIUP_VERSION}/suiup-Linux-musl-x86_64.tar.gz" \
+            --output "${RUNNER_TEMP}/suiup.tar.gz"
+          echo "${SUIUP_ARCHIVE_SHA256}  ${RUNNER_TEMP}/suiup.tar.gz" | sha256sum --check --strict
+          tar --extract --gzip --no-same-owner --file "${RUNNER_TEMP}/suiup.tar.gz" \
+            --directory "${RUNNER_TEMP}" suiup
+          install -m 0755 "${RUNNER_TEMP}/suiup" "${SUIUP_DEFAULT_BIN_DIR}/suiup"
+          echo "${SUIUP_DEFAULT_BIN_DIR}" >> "${GITHUB_PATH}"
+          "${SUIUP_DEFAULT_BIN_DIR}/suiup" install "sui@${SUI_VERSION}" --yes
+          "${SUIUP_DEFAULT_BIN_DIR}/suiup" default set "sui@testnet-${SUI_VERSION}"
+          "${SUIUP_DEFAULT_BIN_DIR}/sui" --version | grep -E "^sui ${SUI_VERSION}([+-]|$)"
+
+      - name: Build for Testnet
+        run: sui move build --build-env testnet --lint --warnings-are-errors
+
+      - name: Test for Testnet
+        run: sui move test --build-env testnet --lint --rand-num-iters 10000
+
+      - name: Build for Mainnet
+        run: sui move build --build-env mainnet --lint --warnings-are-errors
+
+      - name: Test for Mainnet
+        run: sui move test --build-env mainnet --lint --rand-num-iters 10000
+
+      - name: Stress u256 properties
+        run: sui move test --build-env testnet --lint --rand-num-iters 100000 u256
+
+      - name: Enforce complete coverage
+        run: |
+          sui move test --build-env testnet --coverage --lint
+          sui move coverage summary | grep -F "% Move Coverage: 100.00"
+
+      - name: Verify deterministic lockfile
+        run: git diff --exit-code -- Move.lock

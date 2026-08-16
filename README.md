@@ -44,9 +44,23 @@ The unsuffixed functions take `u64` because `Coin`/`Balance` amounts are `u64`.
 
 - `BPS` stores a `u16` (2 bytes BCS), the tightest width that fits `[0, 10_000]`.
 - `u8`–`u128` applications delegate to `std::uX::mul_div(_ceil)`, which widens
-  to the next-larger type internally — they cannot overflow. `u256` has no wider
-  type, so it multiplies directly and only aborts for amounts above
-  `u256::MAX / 10_000` (~1.16e73).
+  to the next-larger type internally. `u256` uses quotient/remainder
+  decomposition, so every application width is total over its valid input
+  domain without arithmetic overflow.
+
+## Development
+
+Build and test both supported network environments explicitly:
+
+```sh
+sui move build --build-env testnet --lint --warnings-are-errors
+sui move test --build-env testnet --lint
+sui move build --build-env mainnet --lint --warnings-are-errors
+sui move test --build-env mainnet --lint
+```
+
+`Move.lock` pins the framework revision and dependency graph separately for
+Testnet and Mainnet and must be committed with release changes.
 
 ## Aborts
 
