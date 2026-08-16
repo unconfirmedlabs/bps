@@ -4,11 +4,10 @@
 ///
 /// Storage-optimal: `BPS` stores a `u16` (2 bytes), the tightest width that
 /// fits the `[0, 10_000]` range. Apply functions cover every standard
-/// integer width (`u8` through `u256`); overflow safety on `u8`–`u128` is
+/// integer width (`u8` through `u256`). Overflow safety on `u8`–`u128` is
 /// delegated to `std::uX::mul_div` / `mul_div_ceil`, which widen to the
-/// next-larger type internally. `u256` has no wider type, so the
-/// multiplication is performed directly and only overflows for amounts
-/// exceeding `u256::MAX / 10_000` (~1.16e73).
+/// next-larger type internally. `u256` uses quotient/remainder decomposition
+/// and is total over its entire input domain.
 module bps::bps;
 
 // === Errors ===
@@ -147,20 +146,27 @@ public fun split_u128(b: BPS, amount: u128): (u128, u128) {
 
 // === Apply to u256 ===
 
-// u256 has no wider type to widen into, so the multiplication is performed
-// directly. `b.0 <= 10_000`, so the multiply only overflows when
-// `amount > u256::MAX / 10_000` (~1.16e73), well beyond any realistic value.
-// Move's native overflow abort is the safety net.
+// u256 has no wider type to widen into. Decompose `amount` before multiplying:
+//
+//   amount = whole * denominator + remainder
+//
+// Both products are safe because `rate <= denominator` and
+// `remainder < denominator`. Their sum is the exact floor of the requested
+// ratio and cannot exceed `amount`.
 
 public fun apply_u256(b: BPS, amount: u256): u256 {
-    amount * (b.0 as u256) / (DENOMINATOR as u256)
+    let denominator = DENOMINATOR as u256;
+    let rate = b.0 as u256;
+    let whole = amount / denominator;
+    let remainder = amount % denominator;
+    whole * rate + (remainder * rate) / denominator
 }
 
 public fun apply_ceil_u256(b: BPS, amount: u256): u256 {
-    let numerator = amount * (b.0 as u256);
-    let denominator = DENOMINATOR as u256;
-    let q = numerator / denominator;
-    if (numerator % denominator == 0) q else q + 1
+    // ceil(amount * rate / D) = amount - floor(amount * (D - rate) / D).
+    // This reuses the total floor implementation instead of maintaining a
+    // separate remainder and rounding path.
+    amount - b.complement().apply_u256(amount)
 }
 
 public fun split_u256(b: BPS, amount: u256): (u256, u256) {
