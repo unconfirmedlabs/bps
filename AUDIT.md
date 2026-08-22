@@ -82,15 +82,17 @@ must never assume `apply(b, x) > 0` for nonzero `x`.
 
 ## Findings
 
-No Critical, High, or Medium issues. The complete findings list:
+No Critical, High, or Medium issues. Everything actionable surfaced by the
+audit has been addressed — the abort-code values are now pinned by literal
+`expected_failure` tests, the u256 abort path was eliminated upstream
+(`26e5ee2`), and all boundary branches are test-covered (see Verification).
+Two inherent design properties remain documented here because callers must
+know them — they are not open issues:
 
-| # | Severity | Item | Status |
-|---|----------|------|--------|
-| 1 | Info | Abort-code *values* were not pinned by tests (constants were referenced by name, so renumbering `0 ↔ 1` would pass the suite while breaking off-chain abort-code matchers) | **Fixed** — literal pins added (`bps_fuzz_tests.move`: `expected_failure(abort_code = 0/1)` tests) |
-| 2 | Info | u256 arithmetic previously aborted with a VM `arithmetic_error` above `u256::MAX / 10_000` | **Resolved upstream** (`26e5ee2`): quotient/remainder decomposition makes u256 total — no abort path remains |
-| 3 | Info | Three boundary branches untested (`apply_ceil(0)`, u256 boundary, floor/ceil sandwich at `u64::MAX`) | **Fixed** — covered by the upstreamed probe tests (`bps_audit_probes.move`) and fuzz suite |
-| 4 | Low (usage risk, not a library bug) | Floor rounding means dust recipients receive 0 | Inherent; documented; all callers design around it |
-| 5 | Info | `add`/`sub` use distinct abort codes (`EOverflow` vs `EUnderflow`) for one error class | Consistent and documented; no action |
+| # | Severity | Item | Notes |
+|---|----------|------|-------|
+| 1 | Low (usage risk, not a library bug) | Floor rounding means dust recipients receive 0 | Inherent to integer math; all callers design around it (see Caller obligations) |
+| 2 | Info | `add`/`sub` use distinct abort codes (`EOverflow` vs `EUnderflow`) for one error class | Deliberate; changing the error surface would cost downstream matchers more than it buys |
 
 ## Caller obligations (downstream contract)
 
