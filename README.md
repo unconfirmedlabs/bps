@@ -75,7 +75,7 @@ The checked-in Sui Prover suite proves exact floor and ceiling arithmetic,
 full-domain overflow safety, BPS bounds, constructor/combinator behavior, and
 split conservation across every supported integer width. CI runs the proof in
 a digest-pinned container with no network and a read-only repository, then
-requires four deliberately incorrect implementations to fail verification.
+requires five deliberately incorrect implementations to fail verification.
 
 See [`formal/README.md`](formal/README.md) for the proof boundary, exact
 toolchain pins, mutation controls, and reproduction commands.
