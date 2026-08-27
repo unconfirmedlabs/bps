@@ -33,7 +33,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PROVER_IMAGE: ghcr.io/unconfirmedlabs/bps-prover@sha256:0341c9007528428be5083a69b1cdfb9257be70f7d581b0aac00c5181d5b9274f
+  PROVER_IMAGE: ghcr.io/unconfirmedlabs/bps-prover@sha256:1f61259a8918bd7ded4c86aab434e1fd110d08322cf0d4da4b94cbad064cefa6
 
 jobs:
   verify:
