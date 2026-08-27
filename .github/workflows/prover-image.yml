@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - ci/formal-verification
     paths:
       - docker/prover.Dockerfile
       - formal/toolchain.env
@@ -13,6 +12,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  artifact-metadata: write
   contents: read
   packages: write
   attestations: write

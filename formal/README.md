@@ -59,8 +59,7 @@ repository read-only, and disable Docker networking.
 
 The complete run proves 30 specification functions, which produce 90 backend
 verification targets (`Check`, `Assume`, and `SpecNoAbortCheck`). CI also runs
-the four mutation controls independently, so a green proof job and a green
-negative-control job are both required.
+the four mutation controls as an independent phase, so both phases must pass.
 
 The proof establishes the checked-in specifications for the checked-in source.
 It does not prove that the specifications cover every desired application-level
