@@ -43,10 +43,17 @@ The unsuffixed functions take `u64` because `Coin`/`Balance` amounts are `u64`.
 ## Design notes
 
 - `BPS` stores a `u16` (2 bytes BCS), the tightest width that fits `[0, 10_000]`.
-- `u8`–`u128` applications delegate to `std::uX::mul_div(_ceil)`, which widens
-  to the next-larger type internally. `u256` uses quotient/remainder
-  decomposition, so every application width is total over its valid input
-  domain without arithmetic overflow.
+- `u8`–`u128` applications inline their arithmetic after widening to a safe
+  larger type. Floor uses one multiplication and one division; ceil adds
+  `9_999` before that division, avoiding a second remainder/division pass.
+- The standard `mul_div` helpers are intentionally not used: they provide the
+  same widening as ordinary function calls, and `mul_div_ceil` also performs a
+  remainder check. The fixed 10,000 denominator permits the cheaper formulas.
+- `u256` uses quotient/remainder decomposition, so every application width is
+  total over its valid input domain without arithmetic overflow.
+- All helpers are ordinary composable `public fun`s. The denominator is a
+  source macro, so reading it adds neither a runtime call nor published
+  bytecode.
 
 ## Development
 
@@ -54,9 +61,9 @@ Build and test both supported network environments explicitly:
 
 ```sh
 sui move build --build-env testnet --lint --warnings-are-errors
-sui move test --build-env testnet --lint
+sui move test --build-env testnet --lint --warnings-are-errors
 sui move build --build-env mainnet --lint --warnings-are-errors
-sui move test --build-env mainnet --lint
+sui move test --build-env mainnet --lint --warnings-are-errors
 ```
 
 `Move.lock` pins the framework revision and dependency graph separately for
