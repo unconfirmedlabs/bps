@@ -1,0 +1,5 @@
+--- a/sources/bps.move
++++ b/sources/bps.move
+@@ -220 +220 @@
+-    (taken, amount - taken)
++    (taken, amount - (taken / 2))

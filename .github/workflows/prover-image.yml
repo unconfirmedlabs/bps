@@ -1,0 +1,78 @@
+name: Prover Image
+
+on:
+  push:
+    branches:
+      - main
+      - ci/formal-verification
+    paths:
+      - docker/prover.Dockerfile
+      - formal/toolchain.env
+      - scripts/build-prover-image.sh
+      - .github/workflows/prover-image.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
+concurrency:
+  group: prover-image-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE_NAME: ghcr.io/unconfirmedlabs/bps-prover
+
+jobs:
+  publish:
+    name: Build and attest prover image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+      image: ${{ env.IMAGE_NAME }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve immutable image tag
+        id: toolchain
+        run: |
+          source formal/toolchain.env
+          echo "tag=${PROVER_IMAGE_TAG}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build and publish
+        id: build
+        env:
+          IMAGE_REF: ${{ env.IMAGE_NAME }}:${{ steps.toolchain.outputs.tag }}
+        run: |
+          metadata="${RUNNER_TEMP}/image-metadata.json"
+          bash scripts/build-prover-image.sh \
+            "${IMAGE_REF}" \
+            --push \
+            --metadata-file "${metadata}"
+          digest="$(jq -r '."containerimage.digest"' "${metadata}")"
+          test "${digest#sha256:}" != "${digest}"
+          echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+          echo "Published ${IMAGE_REF}@${digest}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Attest image provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: ${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true

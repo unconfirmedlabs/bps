@@ -1,0 +1,9 @@
+[package]
+name = "bps_specs"
+edition = "2024"
+
+[dependencies]
+bps = { local = "../" }
+
+[addresses]
+bps_specs = "0x0"
