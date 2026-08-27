@@ -18,6 +18,11 @@ fun new_and_accessors() {
 }
 
 #[test]
+fun bcs_encoding_is_two_bytes() {
+    assert_eq!(std::bcs::to_bytes(&bps::max()).length(), 2);
+}
+
+#[test]
 fun new_at_exact_boundary() {
     assert!(bps::new(10_000).is_max());
 }
@@ -77,7 +82,7 @@ fun apply_ceil_matches_floor_on_exact_division() {
 
 #[test]
 fun apply_no_overflow_at_u64_limit() {
-    // u64::MAX * 10_000 would overflow u64; mul_div widens internally.
+    // u64::MAX * 10_000 would overflow u64; apply widens first.
     assert!(bps::max().apply(U64_MAX) == U64_MAX);
     // u64::MAX * 5000 / 10_000 = (u64::MAX - 1) / 2 = floor(u64::MAX/2)
     let half = U64_MAX / 2;
@@ -288,6 +293,13 @@ fun apply_ceil_u128_rounds_up_and_exact() {
 fun apply_ceil_u256_remainder_branch() {
     // 100 * 33 = 3_300; 3_300 % 10_000 != 0 → q + 1
     assert!(bps::new(33).apply_ceil_u256(100u256) == 1u256);
+}
+
+#[test]
+fun apply_ceil_u256_rounds_remainder_one_up() {
+    // The smallest remainder is the boundary that distinguishes 9_999 from
+    // any smaller ceiling offset.
+    assert_eq!(bps::new(1).apply_ceil_u256(10_001u256), 2u256);
 }
 
 #[test]

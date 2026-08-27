@@ -2,6 +2,7 @@
 module bps::bps_fuzz_tests;
 
 use bps::bps;
+use std::unit_test::assert_eq;
 
 const U64_MAX: u64 = 18_446_744_073_709_551_615;
 const U128_MAX: u128 = 340_282_366_920_938_463_463_374_607_431_768_211_455;
@@ -47,6 +48,9 @@ fun check_u64(v: u16, x: u64) {
     let floor = b.apply(x);
     let ceil = b.apply_ceil(x);
     let (taken, remainder) = b.split(x);
+    let numerator = (x as u128) * (v as u128);
+    assert_eq!(floor, (numerator / 10_000) as u64);
+    assert_eq!(ceil, ((numerator + 9_999) / 10_000) as u64);
     // conservation: split is exact and agrees with apply
     assert!(taken == floor);
     assert!(taken + remainder == x);
@@ -142,6 +146,9 @@ fun fuzz_u128() {
         let floor = b.apply_u128(x);
         let ceil = b.apply_ceil_u128(x);
         let (taken, remainder) = b.split_u128(x);
+        let numerator = (x as u256) * (v as u256);
+        assert_eq!(floor, (numerator / 10_000) as u128);
+        assert_eq!(ceil, ((numerator + 9_999) / 10_000) as u128);
         assert!(taken == floor);
         assert!(taken + remainder == x);
         assert!(floor <= x);
@@ -212,6 +219,9 @@ fun fuzz_u8() {
         let floor = b.apply_u8(x);
         let ceil = b.apply_ceil_u8(x);
         let (taken, remainder) = b.split_u8(x);
+        let numerator = (x as u32) * (v as u32);
+        assert_eq!(floor, (numerator / 10_000) as u8);
+        assert_eq!(ceil, ((numerator + 9_999) / 10_000) as u8);
         assert!(taken == floor);
         assert!(taken + remainder == x);
         assert!(floor <= x);
@@ -236,6 +246,9 @@ fun fuzz_u16() {
         let floor = b.apply_u16(x);
         let ceil = b.apply_ceil_u16(x);
         let (taken, remainder) = b.split_u16(x);
+        let numerator = (x as u32) * (v as u32);
+        assert_eq!(floor, (numerator / 10_000) as u16);
+        assert_eq!(ceil, ((numerator + 9_999) / 10_000) as u16);
         assert!(taken == floor);
         assert!(taken + remainder == x);
         assert!(floor <= x);
@@ -260,6 +273,9 @@ fun fuzz_u32() {
         let floor = b.apply_u32(x);
         let ceil = b.apply_ceil_u32(x);
         let (taken, remainder) = b.split_u32(x);
+        let numerator = (x as u64) * (v as u64);
+        assert_eq!(floor, (numerator / 10_000) as u32);
+        assert_eq!(ceil, ((numerator + 9_999) / 10_000) as u32);
         assert!(taken == floor);
         assert!(taken + remainder == x);
         assert!(floor <= x);
