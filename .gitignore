@@ -3,3 +3,6 @@ traces/*
 .trace
 .coverage*
 Pub.*.toml
+sui-prover.log.*
+formal/specs/Move.lock
+formal/specs/output/
