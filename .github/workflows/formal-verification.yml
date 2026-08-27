@@ -1,0 +1,88 @@
+name: Formal Verification
+
+on:
+  pull_request:
+    paths:
+      - sources/**
+      - formal/**
+      - scripts/formal-common.sh
+      - scripts/verify-formal.sh
+      - scripts/verify-formal-mutations.sh
+      - Move.toml
+      - .github/workflows/formal-verification.yml
+  push:
+    branches:
+      - main
+    paths:
+      - sources/**
+      - formal/**
+      - scripts/formal-common.sh
+      - scripts/verify-formal.sh
+      - scripts/verify-formal-mutations.sh
+      - Move.toml
+      - .github/workflows/formal-verification.yml
+  workflow_dispatch:
+
+permissions:
+  attestations: read
+  contents: read
+  packages: read
+
+concurrency:
+  group: formal-verification-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  PROVER_IMAGE: ghcr.io/unconfirmedlabs/bps-prover@sha256:0341c9007528428be5083a69b1cdfb9257be70f7d581b0aac00c5181d5b9274f
+
+jobs:
+  verify:
+    name: Prove arithmetic and reject mutations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify provenance and pull immutable image
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh attestation verify "oci://${PROVER_IMAGE}" --repo "${GITHUB_REPOSITORY}"
+          docker pull "${PROVER_IMAGE}"
+
+      - name: Prove BPS arithmetic
+        run: |
+          docker run --rm \
+            --network none \
+            --read-only \
+            --security-opt no-new-privileges \
+            --cap-drop ALL \
+            --pids-limit 512 \
+            --tmpfs /tmp:rw,nosuid,nodev,size=4g \
+            --volume "${GITHUB_WORKSPACE}:/workspace:ro" \
+            --workdir /workspace \
+            "${PROVER_IMAGE}" \
+            bash ./scripts/verify-formal.sh
+
+      - name: Reject arithmetic mutations
+        run: |
+          docker run --rm \
+            --network none \
+            --read-only \
+            --security-opt no-new-privileges \
+            --cap-drop ALL \
+            --pids-limit 512 \
+            --tmpfs /tmp:rw,nosuid,nodev,size=4g \
+            --volume "${GITHUB_WORKSPACE}:/workspace:ro" \
+            --workdir /workspace \
+            "${PROVER_IMAGE}" \
+            bash ./scripts/verify-formal-mutations.sh

@@ -1,0 +1,5 @@
+--- a/sources/bps.move
++++ b/sources/bps.move
+@@ -29 +29 @@
+-    ((($amount as $U) * ($rate as $U) + 9_999) / 10_000) as $T
++    ((($amount as $U) * ($rate as $U) + 9_998) / 10_000) as $T

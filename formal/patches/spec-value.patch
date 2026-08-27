@@ -1,0 +1,11 @@
+--- a/sources/bps.move
++++ b/sources/bps.move
+@@ -35 +35,7 @@
+-public struct BPS(u16) has copy, drop, store;
++public struct BPS(u16) has copy, drop, store;
++
++#[spec_only]
++public fun spec_value(b: BPS): u16 {
++    let BPS(value) = b;
++    value
++}

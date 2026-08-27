@@ -1,0 +1,5 @@
+--- a/sources/bps.move
++++ b/sources/bps.move
+@@ -203 +203 @@
+-    whole * rate + (remainder * rate) / 10_000
++    whole * rate

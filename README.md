@@ -69,6 +69,17 @@ sui move test --build-env mainnet --lint --warnings-are-errors
 `Move.lock` pins the framework revision and dependency graph separately for
 Testnet and Mainnet and must be committed with release changes.
 
+## Formal verification
+
+The checked-in Sui Prover suite proves exact floor and ceiling arithmetic,
+full-domain overflow safety, BPS bounds, constructor/combinator behavior, and
+split conservation across every supported integer width. CI runs the proof in
+a digest-pinned container with no network and a read-only repository, then
+requires four deliberately incorrect implementations to fail verification.
+
+See [`formal/README.md`](formal/README.md) for the proof boundary, exact
+toolchain pins, mutation controls, and reproduction commands.
+
 ## Aborts
 
 | Code | Constant | When |
