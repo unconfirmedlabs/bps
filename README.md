@@ -6,6 +6,15 @@ Basis-points arithmetic for Sui Move, with a typed wrapper.
 constructor and combinator enforces the invariant, so any `BPS` you receive is
 safe to apply without revalidating.
 
+## Published packages
+
+Both deployments are immutable.
+
+| Network | Package ID | Transaction digest |
+|---|---|---|
+| Mainnet | `0xc470410a4790a5a4a5af09599e3ffb5b2ed47433e265ce6f19c7160ab9ebb266` | `GgPqdamuz398b72pERFKMy5ymU8P7Rad6wLP8CSJCX2D` |
+| Testnet | `0xea4eda4f2120d8f7f726a5c558d0612a92f64d75197979de5902215bca0a5ef6` | `BD6DrFFsupQchhyj4btFRDZHNmpxhsvkCRMtkKcDaGG4` |
+
 ## Usage
 
 ```move
