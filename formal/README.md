@@ -30,7 +30,7 @@ docker run --rm \
   bash ./scripts/verify-formal.sh
 ```
 
-Run the four negative controls:
+Run the five negative controls:
 
 ```sh
 docker run --rm \
@@ -59,7 +59,7 @@ repository read-only, and disable Docker networking.
 
 The complete run proves 30 specification functions, which produce 90 backend
 verification targets (`Check`, `Assume`, and `SpecNoAbortCheck`). CI also runs
-the four mutation controls as an independent phase, so both phases must pass.
+the five mutation controls as an independent phase, so both phases must pass.
 
 The proof establishes the checked-in specifications for the checked-in source.
 It does not prove that the specifications cover every desired application-level
@@ -67,7 +67,7 @@ property, nor does it remove the Move compiler, Sui Prover translation, Boogie,
 Z3, container base images, or package upgrade governance from the trusted
 computing base.
 
-The mutation controls deliberately introduce four arithmetic defects and
+The mutation controls deliberately introduce five arithmetic defects and
 require the prover to return concrete verification failures. They guard against
 vacuous specifications and broken CI wiring; they are not a substitute for
 trusting the prover stack.
