@@ -9,6 +9,7 @@ mutations=(
     "floor-divisor.patch|bps_specs::apply_spec"
     "ceil-offset.patch|bps_specs::apply_ceil_spec"
     "u256-remainder.patch|bps_specs::apply_u256_spec"
+    "u256-ceil-offset.patch|bps_specs::apply_ceil_u256_spec"
     "split-conservation.patch|bps_specs::split_u256_spec"
 )
 

@@ -111,8 +111,9 @@ not grow.
 - Widened reference-result comparisons for every fuzzed `u8`–`u128` floor and
   ceiling result, plus independent `u256` identities and safe-product checks.
 - Exact BCS-size regression and remainder-of-one ceiling regression.
-- Four optimization-specific mutations (floor denominator, generic ceiling
-  offset, `u256` ceiling offset, and split conservation) were all killed.
+- Five optimization-specific mutations (floor denominator, generic ceiling
+  offset, `u256` floor remainder, `u256` ceiling offset, and split conservation)
+  were all killed.
 - Warning-clean linted builds and tests are required for both Testnet and
   Mainnet; see the commands in `README.md`.
 
