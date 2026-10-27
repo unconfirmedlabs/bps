@@ -112,7 +112,6 @@ fun split_invariant_with_rounding_drift() {
 fun split_at_boundaries() {
     let (t, r) = bps::zero().split(1_000);
     assert!(t == 0 && r == 1_000);
-
     let (t, r) = bps::max().split(1_000);
     assert!(t == 1_000 && r == 0);
 }
@@ -206,7 +205,6 @@ fun apply_u256_basic() {
 fun apply_u256_is_total_at_maximum() {
     let amount = std::u256::max_value!();
     let one_bps_floor = amount / 10_000;
-
     assert_eq!(bps::zero().apply_u256(amount), 0);
     assert_eq!(bps::new(1).apply_u256(amount), one_bps_floor);
     assert_eq!(bps::new(9_999).apply_u256(amount), amount - one_bps_floor - 1);
@@ -217,7 +215,6 @@ fun apply_u256_is_total_at_maximum() {
 fun apply_ceil_u256_is_total_at_maximum() {
     let amount = std::u256::max_value!();
     let one_bps_floor = amount / 10_000;
-
     assert_eq!(bps::zero().apply_ceil_u256(amount), 0);
     assert_eq!(bps::new(1).apply_ceil_u256(amount), one_bps_floor + 1);
     assert_eq!(bps::new(9_999).apply_ceil_u256(amount), amount - one_bps_floor);
@@ -229,7 +226,6 @@ fun u256_half_rate_handles_high_domain_parity() {
     let maximum = std::u256::max_value!();
     let largest_even = maximum - 1;
     let half = bps::new(5_000);
-
     assert_eq!(half.apply_u256(maximum), maximum / 2);
     assert_eq!(half.apply_ceil_u256(maximum), maximum / 2 + 1);
     assert_eq!(half.apply_u256(largest_even), largest_even / 2);
@@ -245,7 +241,6 @@ fun u256_matches_direct_product_when_multiplication_is_safe(random_rate: u16, ra
     let expected_floor = numerator / denominator;
     let expected_ceil = expected_floor + if (numerator % denominator == 0) 0 else 1;
     let rate = bps::new(raw_rate);
-
     assert_eq!(rate.apply_u256(amount), expected_floor);
     assert_eq!(rate.apply_ceil_u256(amount), expected_ceil);
 }
@@ -257,7 +252,6 @@ fun u256_full_domain_rounding_and_partition_invariants(random_rate: u16, amount:
     let floor = rate.apply_u256(amount);
     let ceil = rate.apply_ceil_u256(amount);
     let (taken, remainder) = rate.split_u256(amount);
-
     assert!(floor <= ceil);
     assert!(ceil <= amount);
     assert!(ceil - floor <= 1);

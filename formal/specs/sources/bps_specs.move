@@ -1,7 +1,6 @@
 module bps_specs::bps_specs;
 
 use bps::bps::{Self, BPS};
-
 #[spec_only]
 use prover::prover::{asserts, ensures, requires};
 
