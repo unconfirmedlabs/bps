@@ -8,6 +8,7 @@ const U64_MAX: u64 = 18_446_744_073_709_551_615;
 const U128_MAX: u128 = 340_282_366_920_938_463_463_374_607_431_768_211_455;
 
 // === Deterministic PRNG ===
+
 //
 // xorshift64: shift/xor only, so no overflow aborts and no environment
 // dependence. Fixed seed => reproducible draws on every run.
